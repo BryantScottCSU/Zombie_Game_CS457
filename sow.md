@@ -79,7 +79,8 @@
 ---
 
 ### 2.3 Game State Machine (FSM) Design (Sprint 1 Deliverable)
-- **State Transitions:** <img width="2666" height="8192" alt="Zombie Survival Action Flow-2026-10-03-185831" src="https://github.com/user-attachments/assets/5dcbacfe-e00b-467e-8ed2-9d0efd5e874e" />
+- **State Transitions:** <img width="3901" height="8192" alt="Zombie Survival Action Flow-2026-10-03-191201" src="https://github.com/user-attachments/assets/f7ad3bae-4f26-4853-8864-6f48c8907341" />
+
 
 
 ---
