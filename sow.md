@@ -98,96 +98,44 @@
 ```mermaid
 sequenceDiagram
     participant Z as Zombie Client
-    participant S as Authoritative Server
+    participant S as Server
     participant H as Survivor Client
 
-    Note over Z,H: TCP with newline-delimited JSON<br/>Server owns board state, round, active role, and move budgets
-    S-->>Z: GAME_START — role: zombie
-    S-->>H: GAME_START — role: survivor
+    Note over Z,H: Server controls turn order and remaining moves.<br/>Both clients display the server's state.
 
-    loop Each round while match is active — maximum 20 rounds
-        Note over Z,H: Disconnect handling interrupts any phase below
-        
-        break Disconnect or Connection Loss
-            S->>S: Stop processing actions and declare opponent winner
-            S-->>Z: GAME_OVER if still connected
-            S-->>H: GAME_OVER if still connected
-            S->>S: Close connections and release player and match resources
-        end
+    loop While game is active
+        S-->>Z: STATE_UPDATE — zombie turn, 4 moves
+        S-->>H: STATE_UPDATE — zombie turn, 4 moves
 
-        S->>S: Set active role to zombie; grant 4 moves
-        S-->>Z: STATE_UPDATE — board, round, active role, moves remaining
-        S-->>H: STATE_UPDATE — same authoritative state
-
-        loop Until 4 zombie moves are spent or match finishes
-            Z->>S: ACT — spawn regular, cash move, or spawn special
-            S->>S: Parse complete JSON line and validate required fields
-            S->>S: Verify player identity against connection and assigned role
-            S->>S: Check match active, zombie turn, and remaining move budget
-            S->>S: Validate action, target lane, and parameters
-            Note right of S: Special spawn requires 4 saved cash<br/>Cash action saves toward a special zombie
-            alt Any validation fails
-                S-->>Z: ERROR — validation reason
-                Note right of S: Keep board, cash, and move budget unchanged<br/>Do not broadcast a state change
-            else All checks pass
-                S->>S: Apply action and deduct move cost atomically
-                S->>S: Update authoritative board and cash balance
-                S-->>Z: STATE_UPDATE — complete updated state
-                S-->>H: STATE_UPDATE — identical state snapshot
-                Note over Z,H: Both clients replace their displayed state<br/>with the server snapshot
-            end
-            opt Survivor submits ACT during zombie turn
-                H->>S: ACT
-                S-->>H: ERROR — not your turn
-                Note right of S: No state change or move consumed
+        loop Until zombie moves are spent
+            Z->>S: ACT
+            S->>S: Validate sender, turn, action, and moves remaining
+            alt Valid
+                S->>S: Apply action and deduct move cost
+                S-->>Z: STATE_UPDATE — board and moves remaining
+                S-->>H: STATE_UPDATE — same state
+            else Invalid
+                S-->>Z: ERROR — state and moves unchanged
             end
         end
 
-        S->>S: Advance zombies 1 space and resolve window damage and entry
-        Note right of S: A survivor guarding a broken window kills arriving zombies<br/>Broken windows cannot be repaired
-        
-        break Zombie enters broken window unguarded
-            S-->>Z: GAME_OVER — zombies win
-            S-->>H: GAME_OVER — zombies win
-            S->>S: Release player and match resources
-        end
+        S-->>Z: STATE_UPDATE — survivor turn, 3 moves
+        S-->>H: STATE_UPDATE — survivor turn, 3 moves
 
-        S->>S: Set active role to survivor; grant 3 moves
-        S-->>Z: STATE_UPDATE — resolved board, round, active role, moves remaining
-        S-->>H: STATE_UPDATE — same authoritative state
-
-        loop Until 3 survivor moves are spent
-            H->>S: ACT — shoot, repair, or move survivor
-            S->>S: Parse complete JSON line and validate required fields
-            S->>S: Verify player identity against connection and assigned role
-            S->>S: Check match active, survivor turn, and remaining move budget
-            S->>S: Validate survivor, action, target, and lane constraints
-            Note right of S: Shoot requires a valid zombie in the survivor's lane<br/>Repair requires an unbroken window below 2 health<br/>Move requires a valid destination window
-            alt Any validation fails
-                S-->>H: ERROR — validation reason
-                Note right of S: Keep board and move budget unchanged<br/>Do not broadcast a state change
-            else All checks pass
-                S->>S: Apply action and deduct move cost atomically
-                S->>S: Update survivor positions, window health, or zombie health
-                Note right of S: Regular zombie dies after 1 shot<br/>Special zombie dies after 5 shots
-                S-->>Z: STATE_UPDATE — complete updated state
-                S-->>H: STATE_UPDATE — identical state snapshot
+        loop Until survivor moves are spent
+            H->>S: ACT
+            S->>S: Validate sender, turn, action, and moves remaining
+            alt Valid
+                S->>S: Apply action and deduct move cost
+                S-->>Z: STATE_UPDATE — board and moves remaining
+                S-->>H: STATE_UPDATE — same state
+            else Invalid
+                S-->>H: ERROR — state and moves unchanged
             end
-            opt Zombie submits ACT during survivor turn
-                Z->>S: ACT
-                S-->>Z: ERROR — not your turn
-                Note right of S: No state change or move consumed
-            end
-        end
-
-        alt Round 20 completed
-            S-->>Z: GAME_OVER — survivors win
-            S-->>H: GAME_OVER — survivors win
-            S->>S: Release player and match resources
-        else More rounds remain
-            S->>S: Increment round; return turn to zombies
         end
     end
+
+    Note over Z,H: Out-of-turn actions receive ERROR without changing state.<br/>Any disconnect stops play: opponent wins, server sends GAME_OVER<br/>to the connected client and releases player and match resources.
 ```
 --- 
 
