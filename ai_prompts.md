@@ -26,3 +26,8 @@ command, the opponent wins automatically. The server will then reclaim the resou
 for more info about how the game is structured and how the server will work.
 
 Prompt 3, Adding the same logic for unexpected client drops: Now handle unexpected disconnects the same way
+
+Sequence diagram prompts:
+I need a new diagram please, a Turn Synchronization Scheme with the following in mind (then pasting in my SOW so far with implementation details.)
+Detail action validation and state broadcasts
+This diagram needs to be simplified. Don't worry as much about the game mechanics, just turn synconisation
