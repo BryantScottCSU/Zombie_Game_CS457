@@ -107,14 +107,15 @@ sequenceDiagram
 
     loop Each round while match is active — maximum 20 rounds
         Note over Z,H: Disconnect handling interrupts any phase below
-        break Either player sends DISCONNECT or unexpected connection loss is detected
+        
+        break Disconnect or Connection Loss
             S->>S: Stop processing actions and declare opponent winner
             S-->>Z: GAME_OVER if still connected
             S-->>H: GAME_OVER if still connected
             S->>S: Close connections and release player and match resources
         end
 
-        S->>S: Set active role to zombie&#59; grant 4 moves
+        S->>S: Set active role to zombie; grant 4 moves
         S-->>Z: STATE_UPDATE — board, round, active role, moves remaining
         S-->>H: STATE_UPDATE — same authoritative state
 
@@ -144,13 +145,14 @@ sequenceDiagram
 
         S->>S: Advance zombies 1 space and resolve window damage and entry
         Note right of S: A survivor guarding a broken window kills arriving zombies<br/>Broken windows cannot be repaired
-        break Zombie enters a broken window without a survivor guarding its lane
+        
+        break Zombie enters broken window unguarded
             S-->>Z: GAME_OVER — zombies win
             S-->>H: GAME_OVER — zombies win
             S->>S: Release player and match resources
         end
 
-        S->>S: Set active role to survivor&#59; grant 3 moves
+        S->>S: Set active role to survivor; grant 3 moves
         S-->>Z: STATE_UPDATE — resolved board, round, active role, moves remaining
         S-->>H: STATE_UPDATE — same authoritative state
 
@@ -183,7 +185,7 @@ sequenceDiagram
             S-->>H: GAME_OVER — survivors win
             S->>S: Release player and match resources
         else More rounds remain
-            S->>S: Increment round&#59; return turn to zombies
+            S->>S: Increment round; return turn to zombies
         end
     end
 ```
