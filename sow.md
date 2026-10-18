@@ -92,8 +92,8 @@
 - **Synchronization Logic:** To prevent race conditions and maintain state between turns, threading.lock will be used. This will allow us to mutate the gamestate safely. Since both players take their turn one at a time, state management should be simple, and easier to implement using multi threading. 
 
 ### 3.2 State & Score Synchronization Across Clients
-- **Turn Enforcement:** Detail how the server validates active player ID before processing moves and broadcasts updated turn notifications to all clients.
-- **Score & Board Synchronization:** Describe how state broadcasts keep client screens synchronized in real time.
+- **Turn Enforcement:** When an ACT message arrives, our server checks the port it arrived at against the player_ID and player_role, to ensure that they match and are expected. We check state to ensure it is an in turn message by checking active_role, and act accordingly. 
+- **Score & Board Synchronization:** Every valid move by either player triggers an updated state broadcast. Each client node parses JSON, clears its terminal output, and redraws the board with the updated state.
 
 ```mermaid
 sequenceDiagram
